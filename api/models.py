@@ -17,6 +17,11 @@ class Member(models.Model):
     def check_password(self, raw_password: str) -> bool:
         return check_password(raw_password, self.password)
 
+    @property
+    def is_authenticated(self) -> bool:
+        # Required by DRF's IsAuthenticated permission to treat this instance as an authenticated user
+        return True
+
     def __str__(self):
         return self.username
 
