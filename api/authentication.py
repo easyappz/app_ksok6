@@ -15,5 +15,6 @@ class JWTMemberAuthentication(BaseAuthentication):
         try:
             member = decode_jwt(token)
         except Exception:
-            raise exceptions.AuthenticationFailed('Invalid or expired token')
+            # Treat invalid/expired token as no authentication to allow public endpoints to pass
+            return None
         return (member, None)

@@ -80,7 +80,6 @@ paths:
     get:
       tags: [games]
       summary: List open games
-      security: [ { bearerAuth: [] } ]
       responses:
         '200':
           description: List of open games

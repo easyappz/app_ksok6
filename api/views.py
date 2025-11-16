@@ -59,6 +59,8 @@ class CreateGameView(CsrfExemptAPIView):
         return Response(GameSerializer(game).data, status=status.HTTP_201_CREATED)
 
 class OpenGamesView(CsrfExemptAPIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         games = Game.objects.filter(status=Game.STATUS_OPEN).order_by('-created_at')
         data = OpenGameSerializer(games, many=True).data
