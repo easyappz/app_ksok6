@@ -1,46 +1,102 @@
 openapi: 3.0.3
 info:
-  title: Easyapp API
+  title: TicTacToe API
   version: 1.0.0
-  description: API documentation for easyapp
+servers:
+  - url: /
 paths:
-  /api/hello/:
-    get:
-      operationId: api_hello_retrieve
-      description: Get a hello world message
-      tags:
-      - api
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: Register new member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required: [username, password]
       responses:
-        '200':
+        '201':
+          description: Member created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Message'
-          description: ''
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Validation error
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Login and get JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required: [username, password]
+      responses:
+        '200':
+          description: JWT token and member info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                  member:
+                    $ref: '#/components/schemas/Member'
+        '400':
+          description: Invalid credentials
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: Get current member profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Member info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          description: Unauthorized
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
-    Message:
+    Member:
       type: object
       properties:
-        message:
+        id:
+          type: integer
+        username:
           type: string
-          maxLength: 200
-        timestamp:
+        rating:
+          type: integer
+        wins:
+          type: integer
+        losses:
+          type: integer
+        draws:
+          type: integer
+        created_at:
           type: string
           format: date-time
-          readOnly: true
-      required:
-      - message
-      - timestamp
-  securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid

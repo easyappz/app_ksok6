@@ -1,19 +1,41 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.utils import timezone
-from drf_spectacular.utils import extend_schema
-from .serializers import MessageSerializer
+from rest_framework import status, permissions
+from .serializers import RegisterSerializer, LoginSerializer, MemberSerializer
+from .models import Member
+from .utils import generate_jwt
 
 
-class HelloView(APIView):
-    """
-    A simple API endpoint that returns a greeting message.
-    """
+class RegisterView(APIView):
+    permission_classes = [permissions.AllowAny]
 
-    @extend_schema(
-        responses={200: MessageSerializer}, description="Get a hello world message"
-    )
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        member = Member(username=serializer.validated_data['username'])
+        member.set_password(serializer.validated_data['password'])
+        member.save()
+        return Response(MemberSerializer(member).data, status=status.HTTP_201_CREATED)
+
+
+class LoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            member = Member.objects.get(username=serializer.validated_data['username'])
+        except Member.DoesNotExist:
+            return Response({'detail': 'Неверный логин или пароль'}, status=status.HTTP_400_BAD_REQUEST)
+        if not member.check_password(serializer.validated_data['password']):
+            return Response({'detail': 'Неверный логин или пароль'}, status=status.HTTP_400_BAD_REQUEST)
+        token = generate_jwt(member)
+        return Response({'access': token, 'member': MemberSerializer(member).data}, status=status.HTTP_200_OK)
+
+
+class MeView(APIView):
     def get(self, request):
-        data = {"message": "Hello!", "timestamp": timezone.now()}
-        serializer = MessageSerializer(data)
-        return Response(serializer.data)
+        return Response(MemberSerializer(request.user).data, status=status.HTTP_200_OK)
