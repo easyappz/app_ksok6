@@ -22,6 +22,7 @@ class CsrfExemptAPIView(APIView):
 # Auth Views
 class RegisterView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -34,6 +35,7 @@ class RegisterView(CsrfExemptAPIView):
 
 class LoginView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -60,6 +62,7 @@ class CreateGameView(CsrfExemptAPIView):
 
 class OpenGamesView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def get(self, request):
         games = Game.objects.filter(status=Game.STATUS_OPEN).order_by('-created_at')
@@ -181,6 +184,7 @@ class HistoryView(CsrfExemptAPIView):
 
 class LeaderboardView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def get(self, request):
         members = Member.objects.all().order_by('-rating', '-wins')[:50]
