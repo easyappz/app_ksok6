@@ -19,3 +19,39 @@ class Member(models.Model):
 
     def __str__(self):
         return self.username
+
+
+class Game(models.Model):
+    STATUS_OPEN = 'open'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_FINISHED = 'finished'
+    STATUS_CLOSED = 'closed'
+    STATUS_CHOICES = [
+        (STATUS_OPEN, 'Open'),
+        (STATUS_IN_PROGRESS, 'In Progress'),
+        (STATUS_FINISHED, 'Finished'),
+        (STATUS_CLOSED, 'Closed'),
+    ]
+
+    creator = models.ForeignKey(Member, related_name='created_games', on_delete=models.CASCADE)
+    opponent = models.ForeignKey(Member, related_name='joined_games', on_delete=models.SET_NULL, null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN)
+    board = models.CharField(max_length=9, default='---------')  # 9 cells: '-' empty, 'X' or 'O'
+    next_turn = models.CharField(max_length=1, default='X')  # 'X' or 'O'
+    moves = models.JSONField(default=list)  # list of {index, symbol}
+
+    winner = models.ForeignKey(Member, related_name='won_games', null=True, blank=True, on_delete=models.SET_NULL)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Game #{self.id} ({self.status})"
+
+    @property
+    def is_full(self):
+        return self.opponent is not None
+
+    def as_board_list(self):
+        return list(self.board)
