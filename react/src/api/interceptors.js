@@ -31,12 +31,24 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: on 401, clear token
+// Response interceptor: clear token on 401, and on 403 when details indicate auth issues
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
-    if (status === 401) {
+    const detail = (error?.response?.data && (error.response.data.detail || error.response.data.message)) || '';
+    const detailStr = typeof detail === 'string' ? detail.toLowerCase() : '';
+
+    const shouldClear = (
+      status === 401 ||
+      (status === 403 && (
+        detailStr.includes('invalid') ||
+        detailStr.includes('expired') ||
+        detailStr.includes('authentication credentials were not provided')
+      ))
+    );
+
+    if (shouldClear) {
       localStorage.removeItem('token');
     }
     return Promise.reject(error);
