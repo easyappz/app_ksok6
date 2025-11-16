@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { login } from '../../api/auth';
 
 export default function Login() {
@@ -7,6 +7,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const nextPath = params.get('next') || '/';
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -14,7 +17,7 @@ export default function Login() {
     try {
       const { data } = await login({ username, password });
       localStorage.setItem('token', data.access);
-      navigate('/');
+      navigate(nextPath);
     } catch (err) {
       const msg = err?.response?.data?.detail || 'Ошибка входа';
       setError(msg);

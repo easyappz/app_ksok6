@@ -2,6 +2,21 @@ import { useEffect, useState } from 'react';
 import { createGame, listOpenGames, joinGame } from '../../api/games';
 import { useNavigate } from 'react-router-dom';
 
+function isExpired(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return true;
+    let base64 = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    while (base64.length % 4 !== 0) base64 += '=';
+    const payload = JSON.parse(atob(base64));
+    const exp = typeof payload.exp === 'number' ? payload.exp : 0;
+    const now = Math.floor(Date.now() / 1000);
+    return exp <= now;
+  } catch (e) {
+    return true;
+  }
+}
+
 export default function Home() {
   const [openGames, setOpenGames] = useState([]);
   const [error, setError] = useState('');
@@ -21,6 +36,12 @@ export default function Home() {
   useEffect(() => { load(); }, []);
 
   const onCreate = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || isExpired(token)) {
+      navigate('/login?next=/');
+      return;
+    }
+
     try {
       setLoading(true);
       const { data } = await createGame();
@@ -31,6 +52,13 @@ export default function Home() {
   };
 
   const onJoin = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token || isExpired(token)) {
+      const nextPath = encodeURIComponent(window.location.pathname);
+      navigate(`/login?next=${nextPath}`);
+      return;
+    }
+
     try {
       const { data } = await joinGame(id);
       navigate(`/game/${data.id}`);

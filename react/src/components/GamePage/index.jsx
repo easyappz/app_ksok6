@@ -2,6 +2,21 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getGame, makeMove, closeGame } from '../../api/games';
 
+function isExpired(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return true;
+    let base64 = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    while (base64.length % 4 !== 0) base64 += '=';
+    const payload = JSON.parse(atob(base64));
+    const exp = typeof payload.exp === 'number' ? payload.exp : 0;
+    const now = Math.floor(Date.now() / 1000);
+    return exp <= now;
+  } catch (e) {
+    return true;
+  }
+}
+
 const Cell = ({ value, onClick }) => (
   <button className={`cell ${value}`} onClick={onClick} disabled={value !== '-' }>{value === '-' ? '' : value}</button>
 );
@@ -26,7 +41,14 @@ export default function GamePage() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || isExpired(token)) {
+      navigate(`/login?next=/game/${id}`);
+      return;
+    }
+    load();
+  }, [id, load, navigate]);
 
   useEffect(() => {
     if (!game) return;
