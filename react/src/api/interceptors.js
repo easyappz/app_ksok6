@@ -1,5 +1,30 @@
 import { instance } from './axios';
 
+const PUBLIC_ENDPOINTS = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/games/open',
+  '/api/leaderboard',
+];
+
+function resolvePath(url) {
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.pathname + (u.search || '');
+  } catch (e) {
+    return url || '';
+  }
+}
+
+function isPublic(url) {
+  const path = resolvePath(url);
+  for (let i = 0; i < PUBLIC_ENDPOINTS.length; i += 1) {
+    const ep = PUBLIC_ENDPOINTS[i];
+    if (path.startsWith(ep)) return true;
+  }
+  return false;
+}
+
 function isTokenExpired(token) {
   try {
     const parts = token.split('.');
@@ -18,9 +43,17 @@ function isTokenExpired(token) {
   }
 }
 
-// Request interceptor: drop expired/broken token before sending
+// Request interceptor: drop Authorization for public endpoints and drop expired/broken token before sending
 instance.interceptors.request.use(
   (config) => {
+    if (isPublic(config.url || '')) {
+      if (config.headers) {
+        delete config.headers['Authorization'];
+        delete config.headers['authorization'];
+      }
+      return config;
+    }
+
     const token = localStorage.getItem('token');
     if (token && isTokenExpired(token)) {
       localStorage.removeItem('token');
@@ -50,6 +83,10 @@ instance.interceptors.response.use(
 
     if (shouldClear) {
       localStorage.removeItem('token');
+      if (typeof window !== 'undefined' && window.location && window.location.pathname !== '/login') {
+        const next = encodeURIComponent(window.location.pathname);
+        window.location.assign(`/login?next=${next}`);
+      }
     }
     return Promise.reject(error);
   }
