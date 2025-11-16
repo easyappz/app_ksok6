@@ -68,6 +68,9 @@ INSTALLED_APPS = [
     "api",
 ]
 
+# Ensure required apps present (idempotent)
+INSTALLED_APPS = list(dict.fromkeys(INSTALLED_APPS + ["rest_framework", "api"]))
+
 # REST Framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
