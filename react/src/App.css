@@ -20,3 +20,9 @@ input{ padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,
 .muted{ color:var(--muted); font-size:14px; }
 .grid{ display:grid; gap:12px; }
 @media (max-width:600px){ .nav{ gap:10px; } .app-main{ margin:16px auto; } }
+
+.board{ display:grid; grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(3, 90px); gap:8px; padding:12px; }
+.cell{ width:90px; height:90px; background:#0f1230; border:2px solid rgba(255,255,255,0.08); border-radius:12px; font-size:42px; font-weight:800; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.cell.X{ color:#21d4fd; }
+.cell.O{ color:#7b5cff; }
+@media (max-width:480px){ .board{ grid-template-columns: repeat(3, 28vw); grid-template-rows: repeat(3, 28vw); } .cell{ width:28vw; height:28vw; font-size:12vw; } }
