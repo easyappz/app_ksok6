@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from .serializers import (
     RegisterSerializer, LoginSerializer, MemberSerializer,
@@ -13,8 +15,12 @@ from .utils import generate_jwt
 from .game_logic import check_winner
 from .elo import calculate_elo
 
+@method_decorator(csrf_exempt, name='dispatch')
+class CsrfExemptAPIView(APIView):
+    pass
+
 # Auth Views
-class RegisterView(APIView):
+class RegisterView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -26,7 +32,7 @@ class RegisterView(APIView):
         member.save()
         return Response(MemberSerializer(member).data, status=status.HTTP_201_CREATED)
 
-class LoginView(APIView):
+class LoginView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -42,23 +48,23 @@ class LoginView(APIView):
         token = generate_jwt(member)
         return Response({'access': token, 'member': MemberSerializer(member).data}, status=status.HTTP_200_OK)
 
-class MeView(APIView):
+class MeView(CsrfExemptAPIView):
     def get(self, request):
         return Response(MemberSerializer(request.user).data, status=status.HTTP_200_OK)
 
 # Game Views
-class CreateGameView(APIView):
+class CreateGameView(CsrfExemptAPIView):
     def post(self, request):
         game = Game.objects.create(creator=request.user, status=Game.STATUS_OPEN, board='---------', next_turn='X', moves=[])
         return Response(GameSerializer(game).data, status=status.HTTP_201_CREATED)
 
-class OpenGamesView(APIView):
+class OpenGamesView(CsrfExemptAPIView):
     def get(self, request):
         games = Game.objects.filter(status=Game.STATUS_OPEN).order_by('-created_at')
         data = OpenGameSerializer(games, many=True).data
         return Response(data, status=status.HTTP_200_OK)
 
-class JoinGameView(APIView):
+class JoinGameView(CsrfExemptAPIView):
     def post(self, request, game_id: int):
         game = get_object_or_404(Game, id=game_id)
         if game.status != Game.STATUS_OPEN:
@@ -70,7 +76,7 @@ class JoinGameView(APIView):
         game.save()
         return Response(GameSerializer(game).data, status=status.HTTP_200_OK)
 
-class GameDetailView(APIView):
+class GameDetailView(CsrfExemptAPIView):
     def get(self, request, game_id: int):
         game = get_object_or_404(Game, id=game_id)
         # Only creator or opponent can view non-open games
@@ -78,7 +84,7 @@ class GameDetailView(APIView):
             return Response({'detail': 'Доступ запрещен'}, status=status.HTTP_403_FORBIDDEN)
         return Response(GameSerializer(game).data, status=status.HTTP_200_OK)
 
-class MoveView(APIView):
+class MoveView(CsrfExemptAPIView):
     def post(self, request, game_id: int):
         game = get_object_or_404(Game, id=game_id)
         if game.status != Game.STATUS_IN_PROGRESS:
@@ -138,7 +144,7 @@ class MoveView(APIView):
         game.save()
         return Response(GameSerializer(game).data, status=status.HTTP_200_OK)
 
-class CloseGameView(APIView):
+class CloseGameView(CsrfExemptAPIView):
     def post(self, request, game_id: int):
         game = get_object_or_404(Game, id=game_id)
         if request.user.id not in [game.creator_id, game.opponent_id]:
@@ -149,7 +155,7 @@ class CloseGameView(APIView):
         game.save()
         return Response({'detail': 'Игра закрыта'}, status=status.HTTP_200_OK)
 
-class HistoryView(APIView):
+class HistoryView(CsrfExemptAPIView):
     def get(self, request):
         user = request.user
         games = Game.objects.filter(
@@ -171,7 +177,7 @@ class HistoryView(APIView):
             })
         return Response(HistoryItemSerializer(data, many=True).data, status=status.HTTP_200_OK)
 
-class LeaderboardView(APIView):
+class LeaderboardView(CsrfExemptAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
